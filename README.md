@@ -29,15 +29,15 @@ This project focuses on preprocessing customer data, including cleaning noisy da
 
 ## Data Cleaning
 
-The `data_cleaning.py` script in the `src/` directory implements data cleaning techniques to handle missing values, duplicates, and other inconsistencies.
+The `data_cleaning.py` script implements data cleaning techniques to handle missing values, duplicates, and other inconsistencies.
 
 ## Data Normalization
 
-The `data_normalization.py` script in the `src/` directory normalizes the features of the dataset, ensuring a consistent scale for analysis.
+The `data_normalization.py` script normalizes the features of the dataset, ensuring a consistent scale for analysis.
 
 ## Outlier Removal
 
-The `outlier_removal.py` script in the `src/` directory identifies and removes outliers from the dataset, enhancing the overall data quality.
+The `outlier_removal.py` script identifies and removes outliers from the dataset, enhancing the overall data quality.
 
 ## Getting Started
 
