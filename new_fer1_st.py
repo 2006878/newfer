@@ -25,13 +25,36 @@ try:
 except Exception as e:
     st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
 
+# Função para aplicar a lógica de preenchimento
+def custom_fillna(column):
+    if column.name == 'pressure (mbar).1':
+        # Preencher com a média
+        return column.fillna(column.mean())
+    elif column.name == 'Flow rate [Nm³/h] with Error':
+        # Preencher com 0
+        return column.fillna(0)
+    else:
+        # Manter outros valores como estão
+        return column
+
+# Aplicar a função para preenchimento personalizado
+df = df.apply(custom_fillna)
+
+# Substituir '-' por NaN antes de aplicar as condições acima, pode fazer algo assim:
+df.replace('-', pd.NA, inplace=True)
+
 # Selecionando as colunas relevantes
-cols_to_plot = ['Time [min]', 'pressure (mbar)', 'Flow rate [Nm³/h]', 'T SP above', 'T PV above',
-                'Bed h 40 cm', 'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm',
-                'Bed Tm', 'Bed Tspread [K]}', 'T SP below [°C]', 'T PV below [°C]',
-                'O2 dry [%]', 'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
+cols_to_plot = ['Time [min]', 'Zone', 'pressure (mbar)',
+       'pressure (mbar).1', 'Flow rate [Nm³/h] with Error',
+       'Flow rate [Nm³/h]', 'T SP above', 'T PV above', 'Bed h 40 cm',
+       'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm', 'Bed Tm',
+       'Bed Tspread [K]}', 'T SP below [°C]', 'T PV below [°C]', 'O2 dry [%]',
+       'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
 
 df_selected = df[cols_to_plot]
+
+for column in df_selected:
+    df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
 
 # Criando o gráfico interativo
 fig2 = px.line(df_selected, x='Time [min]', y=cols_to_plot, title='Time Series Visualization of Process Variables',
