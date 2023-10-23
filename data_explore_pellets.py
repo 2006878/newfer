@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 # Especifique o caminho do arquivo Excel
 caminho_do_arquivo = 'data/dataset.xlsx'
@@ -34,6 +35,32 @@ dados_filtered = remove_outliers(dados, 'Product Pellets')
 dados_filtered = remove_outliers(dados_filtered, 'DDRS Rejects/Feed')
 dados_filtered = remove_outliers(dados_filtered, 'SDRS Rejects/Feed')
 
+# Criando o gráfico com Plotly Express
+fig = px.line(dados_filtered, x='Date', y=['Product Pellets'],
+              labels={'value': 'Metric', 'variable': 'Category'},
+              title='Historical Evolution of Product Pellets',
+              line_shape='linear')
+
+# Exibindo o gráfico
+fig.show()
+
+# Normalizando os dados entre 0 e 1
+scaler = MinMaxScaler()
+
+dados_filtered['DDRS Rejects/Feed Normalized'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
+dados_filtered['SDRS Rejects/Feed Normalized'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
+dados_filtered['Product Pellets Normalized'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
+
+# Criando o gráfico com Plotly Express
+fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets Normalized', 'DDRS Rejects/Feed Normalized', 'SDRS Rejects/Feed Normalized'],
+              labels={'value': 'Metric', 'variable': 'Category'},
+              title='Historical Evolution of Product Pellets, BDRS and SDRS (standardized)',
+              line_shape='linear')
+
+# Exibindo o gráfico
+fig3.show()
+
+
 # Extraindo as colunas relevantes do DataFrame filtrado
 dates = dados_filtered['Date']
 pellets = dados_filtered['Product Pellets']
@@ -50,7 +77,7 @@ fig = px.scatter(df_plotly, x='Pellets', y=['DDRS Rejects', 'SDRS Rejects'],
                  hover_data=['Date'], trendline='ols')
 
 # Exibindo o gráfico interativo
-fig.show()
+# fig.show()
 
 
 # %%
@@ -89,7 +116,7 @@ fig = px.line(df_selected, x='Time [min]', y=cols_to_plot, title='Time Series Vi
               line_shape='linear')
 
 # Exibindo o gráfico
-fig.show()
+# fig.show()
 
 
 
