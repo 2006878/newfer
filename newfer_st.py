@@ -78,12 +78,8 @@ st.text("The scatter plot above shows the evolution of DDRS and SDRS in relation
 # Exibindo o gráfico interativo
 st.plotly_chart(fig1, use_container_width=True)
 
-# Criando o mapa de calor
-correlation_heatmap = dados_filtered.corr()
-
-# Exibindo o mapa de calor
-st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
-st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
+colunas_desejadas = ['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed']
+dados_1 = dados_filtered[colunas_desejadas]
 
 # Normalizando os dados entre 0 e 1
 scaler = MinMaxScaler()
@@ -100,3 +96,11 @@ fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets Normalized', 'DDRS 
 
 # Exibindo o gráfico
 st.plotly_chart(fig3, use_container_width=True)
+
+
+# Criando o mapa de calor
+correlation_heatmap = dados_1.corr()
+
+# Exibindo o mapa de calor
+st.write("##### Correlation heat map considering sensitivity to outlyers (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
+st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
