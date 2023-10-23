@@ -39,7 +39,7 @@ except Exception as e:
 # Interface do Streamlit
 st.title("Zayon Data Mining - NewFer")
 
-sensibilidade_outlyer = st.slider("Outlyer sensitivity:", min_value=1.0, max_value=7.5, value=4.0)
+sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 Lowest sensitivity):", min_value=1.0, max_value=10.0, value=5.0)
 
 # Função para remover outliers usando o método IQR
 def remove_outliers(data, column):
@@ -78,14 +78,12 @@ st.text("The scatter plot above shows the evolution of DDRS and SDRS in relation
 # Exibindo o gráfico interativo
 st.plotly_chart(fig1, use_container_width=True)
 
-# Criando o gráfico com Plotly Express
-fig4 = px.line(dados_filtered, x='Date', y=['Product Pellets'],
-              labels={'value': 'Metric', 'variable': 'Category'},
-              title='Historical Evolution of Product Pellets',
-              line_shape='linear')
+# Criando o mapa de calor
+correlation_heatmap = dados_filtered.corr()
 
-# Exibindo o gráfico
-st.plotly_chart(fig4, use_container_width=True)
+# Exibindo o mapa de calor
+st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
+st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
 
 # Normalizando os dados entre 0 e 1
 scaler = MinMaxScaler()

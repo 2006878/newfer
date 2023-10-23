@@ -44,3 +44,11 @@ st.text("The line plot above shows the time series visualization of various proc
 
 # Exibindo o gráfico
 st.plotly_chart(fig2, use_container_width=True)
+
+# Criando o mapa de calor
+correlation_heatmap = df_selected.corr()
+
+# Exibindo o mapa de calor
+st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
+st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
+
