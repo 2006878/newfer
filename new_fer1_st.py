@@ -72,7 +72,7 @@ st.text("The line plot above shows the time series visualization of various proc
         "You can click on the legend to hide or show specific variables.")
 
 # Ajuste da altura do layout do gráfico
-fig2.update_layout(height=650)
+fig2.update_layout(height=600)
 
 # Exibindo o gráfico
 st.plotly_chart(fig2, use_container_width=True)  # Ajuste o valor conforme necessário
