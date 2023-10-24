@@ -36,12 +36,12 @@ def custom_fillna(column):
     else:
         # Manter outros valores como estão
         return column
+    
+# Substituir '-' por NaN antes de aplicar as condições acima, pode fazer algo assim:
+df.replace('-', pd.NA, inplace=True)
 
 # Aplicar a função para preenchimento personalizado
 df = df.apply(custom_fillna)
-
-# Substituir '-' por NaN antes de aplicar as condições acima, pode fazer algo assim:
-df.replace('-', pd.NA, inplace=True)
 
 # Selecionando as colunas relevantes
 cols_to_plot = ['Time [min]', 'Zone', 'pressure (mbar)',
@@ -65,8 +65,11 @@ fig2 = px.line(df_selected, x='Time [min]', y=cols_to_plot, title='Time Series V
 st.text("The line plot above shows the time series visualization of various process variables. "
         "You can click on the legend to hide or show specific variables.")
 
+# Ajuste da altura do layout do gráfico
+fig2.update_layout(height=650)
+
 # Exibindo o gráfico
-st.plotly_chart(fig2, use_container_width=True)
+st.plotly_chart(fig2, use_container_width=True)  # Ajuste o valor conforme necessário
 
 # Criando o mapa de calor
 correlation_heatmap = df_selected.corr()
