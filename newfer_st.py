@@ -84,12 +84,12 @@ dados_1 = dados_filtered[colunas_desejadas]
 # Normalizando os dados entre 0 e 1
 scaler = MinMaxScaler()
 
-dados_filtered['DDRS Rejects/Feed Normalized'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
-dados_filtered['SDRS Rejects/Feed Normalized'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
-dados_filtered['Product Pellets Normalized'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
+dados_filtered['DDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
+dados_filtered['SDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
+dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
 
 # Criando o gráfico com Plotly Express
-fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets Normalized', 'DDRS Rejects/Feed Normalized', 'SDRS Rejects/Feed Normalized'],
+fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
               labels={'value': 'Metric', 'variable': 'Category'},
               title='Historical Evolution of Product Pellets, BDRS and SDRS (standardized)',
               line_shape='linear')
