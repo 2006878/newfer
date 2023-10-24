@@ -44,7 +44,7 @@ df.replace('-', pd.NA, inplace=True)
 df = df.apply(custom_fillna)
 
 # Selecionando as colunas relevantes
-cols_to_plot = ['Time [min]', 'Zone', 'pressure (mbar)',
+cols_to_plot = ['Time [min]', 'pressure (mbar)',
        'pressure (mbar).1', 'Flow rate [Nm³/h] with Error',
        'Flow rate [Nm³/h]', 'T SP above', 'T PV above', 'Bed h 40 cm',
        'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm', 'Bed Tm',
@@ -56,10 +56,16 @@ df_selected = df[cols_to_plot]
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
 
+# Adicionando um multiselect para escolher as zonas
+selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
+
+# Filtrando o DataFrame com base nas zonas selecionadas
+df_filtered = df[df["Zone"].isin(selected_zones)]
+
 # Criando o gráfico interativo
-fig2 = px.line(df_selected, x='Time [min]', y=cols_to_plot, title='Time Series Visualization of Process Variables',
-              labels={'value': 'Value', 'variable': 'Variable'},
-              line_shape='linear')
+fig2 = px.line(df_filtered, x='Time [min]', y=cols_to_plot, title='Time Series Visualization of Process Variables',
+               labels={'value': 'Value', 'variable': 'Variable'},
+               line_shape='linear')
 
 # Adicionando texto explicativo abaixo do segundo gráfico
 st.text("The line plot above shows the time series visualization of various process variables. "
