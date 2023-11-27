@@ -25,22 +25,34 @@ try:
 except Exception as e:
     st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
 
+
+def is_numeric_column_with_zeros_or_empty(col):
+    try:
+        numeric_col = pd.to_numeric(col)
+        return not numeric_col.isin([0, None, '']).any()
+    except (ValueError, TypeError):
+        return False
+    
 # Função para aplicar a lógica de preenchimento
 def custom_fillna(column):
-    if column.name == 'pressure (mbar).1':
-        # Preencher com a média
-        return column.fillna(column.mean())
-    elif column.name == 'Flow rate [Nm³/h] with Error':
-        # Preencher com 0
-        return column.fillna(0)
+
+    if column.name in ['pressure (mbar).1', 'Flow rate [Nm³/h] with Error', 'SO2 [mg/m³]', 'T SP below [°C]']:
+        # Substituir valores 0 ou vazios por NaN
+        column1 = column.replace([0, ''], pd.NaT)
+        # Remover linhas com NaN na columnuna desejada
+        column1 = column1.dropna()
+        mean_value = column1.mean()
+        column = column.replace(0, mean_value)
+        column.fillna(mean_value, inplace=True)
+        return column
     else:
-        # Manter outros valores como estão
         return column
     
 # Substituir '-' por NaN antes de aplicar as condições acima, pode fazer algo assim:
 df.replace('-', pd.NA, inplace=True)
 
 # Aplicar a função para preenchimento personalizado
+# df = df.apply(custom_fillna)
 df = df.apply(custom_fillna)
 
 # Selecionando as colunas relevantes
@@ -52,6 +64,8 @@ cols_to_plot = ['Time [min]', 'pressure (mbar)',
        'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
 
 df_selected = df[cols_to_plot]
+
+df['Zone'] = df['Zone'].fillna('Unnamed')
 
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
