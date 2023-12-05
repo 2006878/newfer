@@ -4,6 +4,7 @@ import plotly.express as px
 from PIL import Image
 from newfer_st import caminho_do_arquivo
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
 
 # Carreguando o ícone da aba
@@ -25,6 +26,14 @@ try:
     df = pd.read_excel(caminho_do_arquivo, sheet_name=nome_tabela_2)
 except Exception as e:
     st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
+
+# Selecionando as colunas relevantes
+cols_to_plot = ['Time [min]', 'pressure (mbar)',
+       'pressure (mbar).1', 'Flow rate [Nm³/h] with Error',
+       'Flow rate [Nm³/h]', 'T SP above', 'T PV above', 'Bed h 40 cm',
+       'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm', 'Bed Tm',
+       'Bed Tspread [K]}', 'T SP below [°C]', 'T PV below [°C]', 'O2 dry [%]',
+       'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
 
 # Função para aplicar a lógica de preenchimento
 
@@ -78,29 +87,26 @@ def custom_fillna(column):
             return np.where((df['Bed h 40 cm'].notna()) & (df['Bed h 10 cm'].notna()), np.maximum(df['Bed h 40 cm'], df['Bed h 10 cm']) - np.minimum(df['Bed h 40 cm'], df['Bed h 10 cm']), column)
 
         else:
-            # Manter outros valores como estão
-            return column
+            # Escreva a lógica para imputar dados faltantes usando interpolação linear
+            ordem = 5
+            return df[column.name].interpolate(method='spline', order=ordem)
+    
     else:
         return column
 
 # Substituir '-' por NaN antes de aplicar as condições acima
-df.replace(['-', '0', ''], pd.NA, inplace=True)
+df.replace(['-', '0', '0.0', ''], pd.NA, inplace=True)
 
 # Aplicar a função para preenchimento personalizado
 df = df.apply(custom_fillna)
-
-# Selecionando as colunas relevantes
-cols_to_plot = ['Time [min]', 'pressure (mbar)',
-       'pressure (mbar).1', 'Flow rate [Nm³/h] with Error',
-       'Flow rate [Nm³/h]', 'T SP above', 'T PV above', 'Bed h 40 cm',
-       'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm', 'Bed Tm',
-       'Bed Tspread [K]}', 'T SP below [°C]', 'T PV below [°C]', 'O2 dry [%]',
-       'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
 
 df_selected = df[cols_to_plot]
 
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
+
+# Substituir valores vazios na coluna "Zone" por "Unnamed"
+df['Zone'].fillna('Unnamed', inplace=True)
 
 # Adicionando um multiselect para escolher as zonas
 selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
@@ -114,6 +120,9 @@ fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='
                title='Time Series Visualization of Process Variables',
                labels={'Value': 'Value', 'Variable': 'Variable'},
                line_shape='linear')
+# Configurar traces para serem inicialmente invisíveis na legenda
+for trace in fig2.data:
+    trace.update(visible='legendonly')
 
 # Adicionando texto explicativo abaixo do segundo gráfico
 st.text("The line plot above shows the time series visualization of various process variables. "
