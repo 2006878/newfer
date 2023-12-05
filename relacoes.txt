@@ -1,0 +1,14 @@
+O2 dry [%] = min (Time [min]) e % O2 dry [%]
+Bed h 40 cm = min (Time [min]) E Bed h 40 cm
+Hood = min (Time [min]) e T PV above
+Bed h 10 cm = min (Time [min]) e Bed h 10 cm
+Bed Tm = SÉRIE('N:\22002 Azergold Dashkasan\3 Engineering\01 Process\00 Testwork\Pelletizing\[Dashkasan Pot Grate Tests Overview_AH.xlsx] = FONTE ENVIADA PELO FORNECEDOR;  Bed h 18 cm, min (Time [min]) E Bed Tm)
+Bed h 32 cm = min (Time [min]) e Bed h 32 cm (COL L)
+Bed h 26 cm = min (Time [min]) e Bed h 26 cm (COL M)
+Bed h 18 cm = min (Time [min]) e Bed h 18 cm (COL N)
+SO2 [mg/m³] = min (Time [min]) e O2 wet [%]
+Time [min] = Time [sec]/60
+Time [sec] = dado importado do sistema do forno
+Zone = DADO IMPORTADO DO FORNO
+Bed Tm (COL P ) = MÉDIA ENTRE Bed h 40 cm e Bed h 10 cm
+Bed Tspread [K](COL Q) = MÁXIMO ENTRE Bed h 40 cm e Bed h 10 cm - MÍNIMO ENTRE Bed h 40 cm e Bed h 10 cm

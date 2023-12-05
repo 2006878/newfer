@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from PIL import Image
 from newfer_st import caminho_do_arquivo
+import numpy as np
 
 
 # Carreguando o ícone da aba
@@ -25,34 +26,67 @@ try:
 except Exception as e:
     st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
 
-
-def is_numeric_column_with_zeros_or_empty(col):
-    try:
-        numeric_col = pd.to_numeric(col)
-        return not numeric_col.isin([0, None, '']).any()
-    except (ValueError, TypeError):
-        return False
-    
 # Função para aplicar a lógica de preenchimento
-def custom_fillna(column):
 
-    if column.name in ['pressure (mbar).1', 'Flow rate [Nm³/h] with Error', 'SO2 [mg/m³]', 'T SP below [°C]']:
-        # Substituir valores 0 ou vazios por NaN
-        column1 = column.replace([0, ''], pd.NaT)
-        # Remover linhas com NaN na columnuna desejada
-        column1 = column1.dropna()
-        mean_value = column1.mean()
-        column = column.replace(0, mean_value)
-        column.fillna(mean_value, inplace=True)
-        return column
+def custom_fillna(column):
+    if column.isna().any() or (column.astype(str).str.strip() == '0').any() or (column.astype(str).str.strip() == '-').any():
+        if column.name == 'O2 dry [%]':
+            return np.where((df['Time [min]'].notna()) & (df['% O2 dry [%]'].notna()), np.minimum(df['Time [min]'], df['% O2 dry [%]']), column)
+
+        elif column.name == 'Bed h 40 cm':
+            return np.where((df['Time [min]'].notna()) & (df['Bed h 40 cm'].notna()), np.minimum(df['Time [min]'], df['Bed h 40 cm']), column)
+
+        elif column.name == 'Hood':
+            return np.where((df['Time [min]'].notna()) & (df['T PV above'].notna()), np.minimum(df['Time [min]'], df['T PV above']), column)
+
+        elif column.name == 'Bed h 10 cm':
+            return np.where((df['Time [min]'].notna()) & (df['Bed h 10 cm'].notna()), np.minimum(df['Time [min]'], df['Bed h 10 cm']), column)
+
+        elif column.name == 'Bed Tm':
+            # Use o método SÉRIE para buscar dados de outra coluna (assumindo que 'Dashkasan Pot Grate Tests Overview_AH.xlsx' está no mesmo diretório)
+            # Certifique-se de ajustar o caminho do arquivo e as referências de coluna conforme necessário
+            df_source = pd.read_excel('Dashkasan Pot Grate Tests Overview_AH.xlsx', sheet_name='FONTE ENVIADA PELO FORNECEDOR')
+            valid_rows = (df['Time [min]'].notna()) & (df['Bed h 18 cm'].notna()) & (df['Bed h 10 cm'].notna())
+            return np.where(valid_rows, df_source.apply(lambda row: np.mean([row['Bed h 18 cm'], row['Bed h 10 cm']]), axis=1), column)
+
+        elif column.name == 'Bed h 32 cm':
+            return np.where((df['Time [min]'].notna()) & (df['Bed h 32 cm (COL L)'].notna()), np.minimum(df['Time [min]'], df['Bed h 32 cm (COL L)']), column)
+
+        elif column.name == 'Bed h 26 cm':
+            return np.where((df['Time [min]'].notna()) & (df['Bed h 26 cm (COL M)'].notna()), np.minimum(df['Time [min]'], df['Bed h 26 cm (COL M)']), column)
+
+        elif column.name == 'Bed h 18 cm':
+            return np.where((df['Time [min]'].notna()) & (df['Bed h 18 cm (COL N)'].notna()), np.minimum(df['Time [min]'], df['Bed h 18 cm (COL N)']), column)
+
+        elif column.name == 'SO2 [mg/m³]':
+            return np.where((df['Time [min]'].notna()) & (df['O2 wet [%]'].notna()), np.minimum(df['Time [min]'], df['O2 wet [%]']), column)
+
+        elif column.name == 'Time [min]':
+            # Calcular Time [min] a partir de Time [sec]
+            return np.where(df['Time [sec]'].notna(), df['Time [sec]'] / 60, column)
+
+        elif column.name == 'Zone':
+            # Preservar os valores existentes
+            return column
+
+        elif column.name == 'Bed Tm (COL P )':
+            # Calcular a média entre Bed h 40 cm e Bed h 10 cm
+            return np.where((df['Bed h 40 cm'].notna()) & (df['Bed h 10 cm'].notna()), np.mean([df['Bed h 40 cm'], df['Bed h 10 cm']], axis=0), column)
+
+        elif column.name == 'Bed Tspread [K](COL Q)':
+            # Calcular a diferença entre Bed h 40 cm e Bed h 10 cm
+            return np.where((df['Bed h 40 cm'].notna()) & (df['Bed h 10 cm'].notna()), np.maximum(df['Bed h 40 cm'], df['Bed h 10 cm']) - np.minimum(df['Bed h 40 cm'], df['Bed h 10 cm']), column)
+
+        else:
+            # Manter outros valores como estão
+            return column
     else:
         return column
-    
-# Substituir '-' por NaN antes de aplicar as condições acima, pode fazer algo assim:
-df.replace('-', pd.NA, inplace=True)
+
+# Substituir '-' por NaN antes de aplicar as condições acima
+df.replace(['-', '0', ''], pd.NA, inplace=True)
 
 # Aplicar a função para preenchimento personalizado
-# df = df.apply(custom_fillna)
 df = df.apply(custom_fillna)
 
 # Selecionando as colunas relevantes
@@ -65,8 +99,6 @@ cols_to_plot = ['Time [min]', 'pressure (mbar)',
 
 df_selected = df[cols_to_plot]
 
-df['Zone'] = df['Zone'].fillna('Unnamed')
-
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
 
@@ -77,8 +109,10 @@ selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
 df_filtered = df[df["Zone"].isin(selected_zones)]
 
 # Criando o gráfico interativo
-fig2 = px.line(df_filtered, x='Time [min]', y=cols_to_plot, title='Time Series Visualization of Process Variables',
-               labels={'value': 'Value', 'variable': 'Variable'},
+fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
+               x='Time [min]', y='Value', color='Variable',
+               title='Time Series Visualization of Process Variables',
+               labels={'Value': 'Value', 'Variable': 'Variable'},
                line_shape='linear')
 
 # Adicionando texto explicativo abaixo do segundo gráfico
@@ -88,11 +122,11 @@ st.text("The line plot above shows the time series visualization of various proc
 # Ajuste da altura do layout do gráfico
 fig2.update_layout(height=600)
 
-# Exibindo o gráfico
-st.plotly_chart(fig2, use_container_width=True)  # Ajuste o valor conforme necessário
+# Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
+st.plotly_chart(fig2, use_container_width=True)
 
 # Criando o mapa de calor
-correlation_heatmap = df_selected.corr()
+correlation_heatmap = df_filtered[cols_to_plot].corr()
 
 # Exibindo o mapa de calor
 st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
