@@ -5,8 +5,8 @@ from PIL import Image
 from newfer_st import caminho_do_arquivo
 import numpy as np
 from sklearn.impute import KNNImputer
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingRegressor
-
 
 # Carreguando o ícone da aba
 favicon = "img/zayon_icon.jpeg"
