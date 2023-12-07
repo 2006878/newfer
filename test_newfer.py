@@ -1,25 +1,11 @@
-import streamlit as st
 import pandas as pd
-import plotly.express as px
-from PIL import Image
-from newfer_st import caminho_do_arquivo
 import numpy as np
-from sklearn.impute import KNNImputer
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
-# Carreguando o ícone da aba
-favicon = "img/zayon_icon.jpeg"
-
-# Configurações da página Streamlit
-st.set_page_config(page_title="Zayon - NewFer", page_icon=favicon, layout="wide")
-
-# Adicionando a logo da empresa
-logo_path = "img/logo_zayon.png"  # Substitua pelo caminho real para a sua logo
-logo = Image.open(logo_path)
-
-# Exibindo a logo no Streamlit
-st.image(logo, use_column_width=False, width=250)
+# Carregar dados
+caminho_do_arquivo = 'data/dataset.xlsx'
 
 # Carregando a tabela específica em um DataFrame
 nome_tabela_2 = 'DATA SET 2'
@@ -91,7 +77,6 @@ def custom_fillna(column):
     else:
         return column
     
-
 def ml_fillna(df):
     for column in cols_to_plot:
         column_numeric = pd.to_numeric(df[column], errors='coerce')
@@ -99,90 +84,63 @@ def ml_fillna(df):
         if np.isnan(column_numeric).any() or (df[column].astype(str).str.strip() == '0').any() or (df[column].astype(str).str.strip() == '-').any() or (df[column].astype(str).str.strip() == '0').any():
             cols_for_training = cols_to_plot.copy()
 
-            # Separar colunas de características (X) e alvo (y) no conjunto completo
-            X_complete = df[cols_for_training]
-            y_complete = df[column]
+            # Dividir o conjunto de dados em treinamento e teste
+            df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
 
-            # Identificar linhas com valores nulos nas colunas de predição
-            mask_missing = y_complete.isna()
+            if not df_train.empty:
+                # Separar colunas de características (X) e alvo (y) no conjunto de treinamento
+                X_train = df_train[cols_for_training]
+                y_train = df_train[column]
 
-            # Imputação usando KNNImputer antes de remover linhas com valores nulos
-            imputer = KNNImputer(n_neighbors=5)
-            y_complete_imputed = imputer.fit_transform(y_complete.values.reshape(-1, 1))
+                # Separar colunas de características (X) e alvo (y) no conjunto de teste
+                X_test = df_test[cols_for_training]
+                y_test = df_test[column]
 
-            # Transformar de volta para uma Série do Pandas
-            y_complete_imputed_series = pd.Series(y_complete_imputed.flatten(), index=y_complete.index)
+                # Remover linhas com valores nulos nas colunas de treinamento
+                mask_train = X_train[cols_for_training].notna().all(axis=1)
+                X_train = X_train[mask_train]
+                y_train = y_train[mask_train]
 
-            # Treinar o modelo de HistGradientBoostingRegressor
-            model = HistGradientBoostingRegressor()
-            model.fit(X_complete, y_complete_imputed_series)
+                # Remover linhas com valores nulos nas colunas de teste
+                mask_test = X_test[cols_for_training].notna().all(axis=1)
+                X_test = X_test[mask_test]
+                y_test = y_test[mask_test]
 
-            # Fazer predições nas colunas do conjunto de dados original com valores faltantes
-            y_pred = model.predict(X_complete)
+                if not X_train.empty and not X_test.empty:
+                    # Treinar o modelo de regressão linear
+                    model = LinearRegression()
+                    model.fit(X_train, y_train)
 
-            # Imputar os dados preditos diretamente no DataFrame original
-            df[column] = y_pred
+                    # Fazer predições nas colunas do conjunto de teste
+                    y_pred = model.predict(X_test)
+
+                    # Avaliar o desempenho do modelo (opcional)
+                    mse = mean_squared_error(y_test, y_pred)
+                    if column == 'Flow rate [Nm³/h] with Error':
+                        print(f'Mean Squared Error for {column}: {mse}')
+                    print(f'Mean Squared Error for {column}: {mse}')
+
+                    # Fazer predições nas colunas do conjunto de dados original com valores faltantes
+                    X_pred = df[df[column].isna()][cols_for_training]
+
+                    if not X_pred.empty:
+                        # Remover linhas com valores nulos nas colunas de predição
+                        mask_pred = X_pred[cols_for_training].notna().all(axis=1)
+                        X_pred = X_pred[mask_pred]
+
+                        if not X_pred.empty:
+                            df.loc[df[column].isna(), column] = model.predict(X_pred)
 
     return df
-
-
-
-
-
-
-
 
 
 for column in df[cols_to_plot]:
     df[column] = pd.to_numeric(df[column], errors='coerce')
 
 # Substituir '-' por NaN antes de aplicar as condições acima
-# df.replace(['-', '0', '0.0', ''], pd.NA, inplace=True)
-df.replace({0: np.nan, '': np.nan, '-':np.nan, '0.0':np.nan}, inplace=True)
+df.replace(['-', '0', '0.0', ''], pd.NA, inplace=True)
 
-df = df.apply(custom_fillna, axis=1)
+# Aplicar a função para preenchimento personalizado
+df = df.apply(custom_fillna)
 
 df = ml_fillna(df)
-
-df_selected = df[cols_to_plot].copy()
-
-for column in df_selected:
-    df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
-
-# Substituir valores vazios na coluna "Zone" por "Unnamed"
-df['Zone'].fillna('Unnamed', inplace=True)
-
-# Adicionando um multiselect para escolher as zonas
-selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
-
-# Filtrando o DataFrame com base nas zonas selecionadas
-df_filtered = df[df["Zone"].isin(selected_zones)]
-
-# Criando o gráfico interativo
-fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
-               x='Time [min]', y='Value', color='Variable',
-               title='Time Series Visualization of Process Variables',
-               labels={'Value': 'Value', 'Variable': 'Variable'},
-               line_shape='linear')
-# Configurar traces para serem inicialmente invisíveis na legenda
-for trace in fig2.data:
-    trace.update(visible='legendonly')
-
-# Adicionando texto explicativo abaixo do segundo gráfico
-st.text("The line plot above shows the time series visualization of various process variables. "
-        "You can click on the legend to hide or show specific variables.")
-
-# Ajuste da altura do layout do gráfico
-fig2.update_layout(height=600)
-
-# Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
-st.plotly_chart(fig2, use_container_width=True)
-st.write(df_filtered[cols_to_plot])
-
-# Criando o mapa de calor
-correlation_heatmap = df_filtered[cols_to_plot].corr()
-
-# Exibindo o mapa de calor
-st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
-st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
-
