@@ -27,7 +27,7 @@ logo = Image.open(logo_path)
 st.image(logo, use_column_width=False, width=250)
 
 # Carregar dados
-caminho_do_arquivo = 'data/dataset.xlsx'
+caminho_do_arquivo = 'data/DataSet_NewFer_230919.xlsx'
 
 # Carregando a tabela específica em um DataFrame
 nome_tabela_1 = 'DATA SET 1'

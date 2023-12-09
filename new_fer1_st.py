@@ -22,10 +22,22 @@ st.image(logo, use_column_width=False, width=250)
 
 # Carregando a tabela específica em um DataFrame
 nome_tabela_2 = 'DATA SET 2'
+
+# Especifique as colunas desejadas
+colunas_desejadas = ['Time [sec]', 'Time [min]', 'Zone', 'Unnamed', 'pressure (mbar)',
+       'pressure (mbar).1', 'Flow rate [Nm³/h] with Error',
+       'Flow rate [Nm³/h]', 'T SP above', 'T PV above', 'Bed h 40 cm',
+       'Bed h 32 cm', 'Bed h 26 cm', 'Bed h 18 cm', 'Bed h 10 cm', 'Bed Tm',
+       'Bed Tspread [K]}', 'T SP below [°C]', 'T PV below [°C]', 'O2 dry [%]',
+       'O2 wet [%]', 'SO2 [mg/m³]', 'Nox [mg/m³]', 'CO2 [%]', 'CO [mg/m³]']
+
+# Carregando o DataFrame a partir da linha 5 e renomeando as colunas
 try:
-    df = pd.read_excel(caminho_do_arquivo, sheet_name=nome_tabela_2)
+    df = pd.read_excel(caminho_do_arquivo, sheet_name=nome_tabela_2, skiprows=4)
+    # df = df[colunas_desejadas]
+    df.columns = colunas_desejadas
 except Exception as e:
-    print(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
+    st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
 
 # Selecionando as colunas relevantes
 cols_to_plot = ['Time [min]', 'pressure (mbar)',
@@ -128,9 +140,9 @@ for column in df[cols_to_plot]:
     df[column] = pd.to_numeric(df[column], errors='coerce')
 
 # Substituir os valores na coluna 'Time[min]' onde 'Time[sec]' é igual a 0 por 1/60
-df.loc[df['Time [sec]'] == 0, 'Time [min]'] = 0.1/60
+df.loc[df['Time [sec]'] == 0, 'Time [min]'] = 1/60
 
-df.replace({0: np.nan, '': np.nan, '-':np.nan, '0.0':np.nan}, inplace=True)
+df.replace({0: np.nan, '': np.nan, '-': np.nan, '0.0': np.nan}, inplace=True)
 
 df = df.apply(custom_fillna, axis=1)
 
@@ -150,17 +162,12 @@ selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
 # Filtrando o DataFrame com base nas zonas selecionadas
 df_filtered = df[df["Zone"].isin(selected_zones)]
 
-# Criando o gráfico interativo
-# fig2 = px.line(df_filtered, x='Time [min]', y=cols_to_plot,
-#                title='Time Series Visualization of Process Variables',
-#                labels={'value': 'Value', 'variable': 'Variable'},
-#                line_shape='linear')
-
 fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
                x='Time [min]', y='Value', color='Variable',
                title='Time Series Visualization of Process Variables',
                labels={'Value': 'Value', 'Variable': 'Variable'},
                line_shape='linear')
+
 # Configurar traces para serem inicialmente invisíveis na legenda
 for trace in fig2.data:
     trace.update(visible='legendonly')
