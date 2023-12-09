@@ -1,11 +1,10 @@
 import streamlit as st
-import pandas as pd
+from newfer_st import caminho_do_arquivo
 import plotly.express as px
 from PIL import Image
-from newfer_st import caminho_do_arquivo
+import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 # Carreguando o ícone da aba
@@ -40,7 +39,11 @@ cols_to_plot = ['Time [min]', 'pressure (mbar)',
 
 def custom_fillna(column):
     if column.isna().any() or (column.astype(str).str.strip() == '0').any() or (column.astype(str).str.strip() == '-').any() or (column.astype(str).str.strip() == '0.0').any():
-        if column.name == 'O2 dry [%]':
+        if column.name == 'Time [min]':
+            # Calcular Time [min] a partir de Time [sec]
+            return np.where(df['Time [sec]'].notna(), df['Time [sec]'] / 60, column)
+        
+        elif column.name == 'O2 dry [%]':
             return np.where((df['Time [min]'].notna()) & (df['% O2 dry [%]'].notna()), np.minimum(df['Time [min]'], df['% O2 dry [%]']), column)
 
         elif column.name == 'Bed h 40 cm':
@@ -70,10 +73,6 @@ def custom_fillna(column):
 
         elif column.name == 'SO2 [mg/m³]':
             return np.where((df['Time [min]'].notna()) & (df['O2 wet [%]'].notna()), np.minimum(df['Time [min]'], df['O2 wet [%]']), column)
-
-        elif column.name == 'Time [min]':
-            # Calcular Time [min] a partir de Time [sec]
-            return np.where(df['Time [sec]'].notna(), df['Time [sec]'] / 60, column)
 
         elif column.name == 'Zone':
             # Preservar os valores existentes
@@ -125,32 +124,25 @@ def ml_fillna(df):
 
     return df
 
-
-
-
-
-
-
-
-
 for column in df[cols_to_plot]:
     df[column] = pd.to_numeric(df[column], errors='coerce')
 
-# Substituir '-' por NaN antes de aplicar as condições acima
-# df.replace(['-', '0', '0.0', ''], pd.NA, inplace=True)
+# Substituir os valores na coluna 'Time[min]' onde 'Time[sec]' é igual a 0 por 1/60
+df.loc[df['Time [sec]'] == 0, 'Time [min]'] = 0.1/60
+
 df.replace({0: np.nan, '': np.nan, '-':np.nan, '0.0':np.nan}, inplace=True)
 
 df = df.apply(custom_fillna, axis=1)
 
 df = ml_fillna(df)
 
+# Substituir valores vazios na coluna "Zone" por "Unnamed"
+df['Zone'].fillna('Unnamed', inplace=True)
+
 df_selected = df[cols_to_plot].copy()
 
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
-
-# Substituir valores vazios na coluna "Zone" por "Unnamed"
-df['Zone'].fillna('Unnamed', inplace=True)
 
 # Adicionando um multiselect para escolher as zonas
 selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
@@ -159,6 +151,11 @@ selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
 df_filtered = df[df["Zone"].isin(selected_zones)]
 
 # Criando o gráfico interativo
+# fig2 = px.line(df_filtered, x='Time [min]', y=cols_to_plot,
+#                title='Time Series Visualization of Process Variables',
+#                labels={'value': 'Value', 'variable': 'Variable'},
+#                line_shape='linear')
+
 fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
                x='Time [min]', y='Value', color='Variable',
                title='Time Series Visualization of Process Variables',
@@ -177,7 +174,6 @@ fig2.update_layout(height=600)
 
 # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
 st.plotly_chart(fig2, use_container_width=True)
-st.write(df_filtered[cols_to_plot])
 
 # Criando o mapa de calor
 correlation_heatmap = df_filtered[cols_to_plot].corr()
@@ -186,3 +182,6 @@ correlation_heatmap = df_filtered[cols_to_plot].corr()
 st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
 st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
 
+if st.checkbox("Show raw data", False):
+    st.subheader('Raw data')
+    st.write(df_filtered[cols_to_plot])
