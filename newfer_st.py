@@ -50,10 +50,10 @@ if uploaded_file:
     # Armazenar o arquivo em cache
     data = load_data(st.session_state.uploaded_file)
 
-if data is None:
-    data = st.session_state.uploaded_file
-
 if st.session_state.uploaded_file is not None:
+    
+    if data is None:
+        data = st.session_state.uploaded_file
 
     # Carregando a tabela específica em um DataFrame
     nome_tabela_1 = 'DATA SET 1'
