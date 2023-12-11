@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit import file_uploader
 import pandas as pd
 import plotly.express as px
 from PIL import Image
@@ -26,81 +27,105 @@ logo = Image.open(logo_path)
 # Exibindo a logo no Streamlit
 st.image(logo, use_column_width=False, width=250)
 
-# Carregar dados
-caminho_do_arquivo = 'data/DataSet_NewFer_230919.xlsx'
-
-# Carregando a tabela específica em um DataFrame
-nome_tabela_1 = 'DATA SET 1'
-try:
-    dados = pd.read_excel(caminho_do_arquivo, sheet_name=nome_tabela_1)
-except Exception as e:
-    st.error(f"Erro ao importar dados da tabela '{nome_tabela_1}': {str(e)}")
-
 # Interface do Streamlit
 st.title("Zayon Data Mining - NewFer")
 
-sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 Lowest sensitivity):", min_value=1.0, max_value=10.0, value=5.0)
+@st.cache_resource
+def load_data(file):
+    return file
 
-# Função para remover outliers usando o método IQR
-def remove_outliers(data, column):
-    Q1 = data[column].quantile(0.25)
-    Q3 = data[column].quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - sensibilidade_outlyer * IQR
-    upper_bound = Q3 +  sensibilidade_outlyer * IQR
-    return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
+data = None
 
-# Remover outliers das colunas relevantes
-dados_filtered = remove_outliers(dados, 'Product Pellets')
-dados_filtered = remove_outliers(dados_filtered, 'DDRS Rejects/Feed')
-dados_filtered = remove_outliers(dados_filtered, 'SDRS Rejects/Feed')
+# Inicializa a variável de estado se não estiver definida
+if 'uploaded_file' not in st.session_state:
+    st.session_state.uploaded_file = None
 
-# Extraindo as colunas relevantes do DataFrame filtrado
-dates = dados_filtered['Date']
-pellets = dados_filtered['Product Pellets']
-ddrs_rejects = dados_filtered['DDRS Rejects/Feed']
-sdrs_rejects = dados_filtered['SDRS Rejects/Feed']
+uploaded_file = file_uploader("Escolha um arquivo xlsx contendo a tabela atualizada", type="xlsx")
 
-# Criando DataFrame para Plotly
-df_plotly = pd.DataFrame({'Date': dates, 'Pellets': pellets, 'DDRS Rejects': ddrs_rejects * 100, 'SDRS Rejects': sdrs_rejects * 100})
+if uploaded_file:
+    
+    # Armazenar o arquivo em uma variável de estado
+    st.session_state.uploaded_file = uploaded_file
 
-# Criando gráfico interativo com Plotly Express
-fig1 = px.scatter(df_plotly, x='Pellets', y=['DDRS Rejects', 'SDRS Rejects'],
-                 labels={'variable': 'Select view', 'value': 'Percentage'},
-                 title='Evolution of DDRS and SDRS in relation to Product Pellets (No Outliers)',
-                 hover_data=['Date'], trendline='ols',
-                 color_discrete_sequence=['#1f77b4', '#ff7f0e'])  # Defina aqui as cores desejadas
+    # Armazenar o arquivo em cache
+    data = load_data(st.session_state.uploaded_file)
 
-# Adicionando texto explicativo
-st.text("The scatter plot above shows the evolution of DDRS and SDRS in relation to Product Pellets. "
-        "You can click on the legend to hide or show specific variables.")
+if data is None:
+    data = st.session_state.uploaded_file
 
-# Exibindo o gráfico interativo
-st.plotly_chart(fig1, use_container_width=True)
+if st.session_state.uploaded_file is not None:
 
-colunas_desejadas = ['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed']
-dados_1 = dados_filtered[colunas_desejadas]
+    # Carregando a tabela específica em um DataFrame
+    nome_tabela_1 = 'DATA SET 1'
+    try:
+        dados = pd.read_excel(data, sheet_name=nome_tabela_1)
+    except Exception as e:
+        st.error(f"Erro ao importar dados da tabela '{nome_tabela_1}': {str(e)}")
 
-# Normalizando os dados entre 0 e 1
-scaler = MinMaxScaler()
+    st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
-dados_filtered['DDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
-dados_filtered['SDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
-dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
+    sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 Lowest sensitivity):", min_value=1.0, max_value=10.0, value=5.0)
 
-# Criando o gráfico com Plotly Express
-fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
-              labels={'value': 'Metric', 'variable': 'Category'},
-              title='Historical Evolution of Product Pellets, BDRS and SDRS (standardized)',
-              line_shape='linear')
+    # Função para remover outliers usando o método IQR
+    def remove_outliers(data, column):
+        Q1 = data[column].quantile(0.25)
+        Q3 = data[column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - sensibilidade_outlyer * IQR
+        upper_bound = Q3 +  sensibilidade_outlyer * IQR
+        return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
 
-# Exibindo o gráfico
-st.plotly_chart(fig3, use_container_width=True)
+    # Remover outliers das colunas relevantes
+    dados_filtered = remove_outliers(dados, 'Product Pellets')
+    dados_filtered = remove_outliers(dados_filtered, 'DDRS Rejects/Feed')
+    dados_filtered = remove_outliers(dados_filtered, 'SDRS Rejects/Feed')
+
+    # Extraindo as colunas relevantes do DataFrame filtrado
+    dates = dados_filtered['Date']
+    pellets = dados_filtered['Product Pellets']
+    ddrs_rejects = dados_filtered['DDRS Rejects/Feed']
+    sdrs_rejects = dados_filtered['SDRS Rejects/Feed']
+
+    # Criando DataFrame para Plotly
+    df_plotly = pd.DataFrame({'Date': dates, 'Pellets': pellets, 'DDRS Rejects': ddrs_rejects * 100, 'SDRS Rejects': sdrs_rejects * 100})
+
+    # Criando gráfico interativo com Plotly Express
+    fig1 = px.scatter(df_plotly, x='Pellets', y=['DDRS Rejects', 'SDRS Rejects'],
+                    labels={'variable': 'Select view', 'value': 'Percentage'},
+                    title='Evolution of DDRS and SDRS in relation to Product Pellets (No Outliers)',
+                    hover_data=['Date'], trendline='ols',
+                    color_discrete_sequence=['#1f77b4', '#ff7f0e'])  # Defina aqui as cores desejadas
+
+    # Adicionando texto explicativo
+    st.text("The scatter plot above shows the evolution of DDRS and SDRS in relation to Product Pellets. "
+            "You can click on the legend to hide or show specific variables.")
+
+    # Exibindo o gráfico interativo
+    st.plotly_chart(fig1, use_container_width=True)
+
+    colunas_desejadas = ['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed']
+    dados_1 = dados_filtered[colunas_desejadas]
+
+    # Normalizando os dados entre 0 e 1
+    scaler = MinMaxScaler()
+
+    dados_filtered['DDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
+    dados_filtered['SDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
+    dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
+
+    # Criando o gráfico com Plotly Express
+    fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
+                labels={'value': 'Metric', 'variable': 'Category'},
+                title='Historical Evolution of Product Pellets, BDRS and SDRS (standardized)',
+                line_shape='linear')
+
+    # Exibindo o gráfico
+    st.plotly_chart(fig3, use_container_width=True)
 
 
-# Criando o mapa de calor
-correlation_heatmap = dados_1.corr()
+    # Criando o mapa de calor
+    correlation_heatmap = dados_1.corr()
 
-# Exibindo o mapa de calor
-st.write("##### Correlation heat map considering sensitivity to outlyers (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
-st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
+    # Exibindo o mapa de calor
+    st.write("##### Correlation heat map considering sensitivity to outlyers (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
+    st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))

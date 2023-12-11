@@ -1,5 +1,4 @@
 import streamlit as st
-from newfer_st import caminho_do_arquivo
 import plotly.express as px
 from PIL import Image
 import pandas as pd
@@ -33,8 +32,8 @@ colunas_desejadas = ['Time [sec]', 'Time [min]', 'Zone', 'Unnamed', 'pressure (m
 
 # Carregando o DataFrame a partir da linha 5 e renomeando as colunas
 try:
-    df = pd.read_excel(caminho_do_arquivo, sheet_name=nome_tabela_2, skiprows=4)
-    # df = df[colunas_desejadas]
+    df = pd.read_excel(st.session_state.uploaded_file, sheet_name=nome_tabela_2, skiprows=4)
+    # st.write(st.session_state.uploaded_file)
     df.columns = colunas_desejadas
 except Exception as e:
     st.error(f"Erro ao importar dados da tabela '{nome_tabela_2}': {str(e)}")
@@ -155,6 +154,9 @@ df_selected = df[cols_to_plot].copy()
 
 for column in df_selected:
     df_selected[column] = pd.to_numeric(df_selected[column], errors='coerce')
+
+
+st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
 # Adicionando um multiselect para escolher as zonas
 selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
