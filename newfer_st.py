@@ -118,7 +118,7 @@ if st.session_state.uploaded_file is not None:
     # Criando o gráfico com Plotly Express
     fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
                 labels={'value': 'Values (%)', 'variable': 'Category'},
-                title='Historical Evolution of Product Pellets, BDRS and SDRS (standardized)',
+                title='Historical Evolution of Product Pellets, DDRS and SDRS',
                 line_shape='linear')
 
     # Exibindo o gráfico
