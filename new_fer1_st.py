@@ -183,7 +183,7 @@ else:
     st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
     # Adicionando um multiselect para escolher as zonas
-    selected_zones = st.multiselect("Select Zones", df["Zone"].unique())
+    selected_zones = st.multiselect("Select Zones", df["Zone"].unique(), default=df["Zone"].unique())
 
     # Filtrando o DataFrame com base nas zonas selecionadas
     df_filtered = df[df["Zone"].isin(selected_zones)]
