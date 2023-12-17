@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.preprocessing import MinMaxScaler
 from streamlit import file_uploader
 
 # Carreguando o ícone da aba
@@ -188,32 +189,70 @@ else:
     # Filtrando o DataFrame com base nas zonas selecionadas
     df_filtered = df[df["Zone"].isin(selected_zones)]
 
-    fig2 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
+    if st.checkbox("Show normalized data", False):
+        # Normalizando os dados entre 0 e 1
+        scaler = MinMaxScaler()
+        
+        # Normalizar as colunas selecionadas
+        df_normalized = df_filtered[cols_to_plot].copy()
+        # df_normalized[cols_to_plot] = scaler.fit_transform(df_selected[cols_to_plot])
+        for column in df_normalized:
+            if column != 'Time [min]':
+                df_normalized[column] = scaler.fit_transform(df_normalized[[column]])
+
+        fig1 = px.line(df_normalized.melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
                 x='Time [min]', y='Value', color='Variable',
-                title='Time Series Visualization of Process Variables',
-                labels={'Value': 'Value', 'Variable': 'Variable'},
+                title='Time Series Visualization of Normalized Process Variables',
+                labels={'Value': 'Normalized Value', 'Variable': 'Variable'},
                 line_shape='linear')
 
-    # Configurar traces para serem inicialmente invisíveis na legenda
-    for trace in fig2.data:
-        trace.update(visible='legendonly')
+        # Configurar traces para serem inicialmente invisíveis na legenda
+        for trace in fig1.data:
+            trace.update(visible='legendonly')
 
-    # Adicionando linhas verticais para marcar os limites entre as zonas selecionadas colocando o nome da zona no meio
-    for zone in selected_zones:
-        zone_start = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].min()
-        zone_end = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].max()
-        fig2.add_vline(x=zone_start, line_dash='dash', line_color='gray', annotation_text=zone, annotation_position='top right')
-            
-    # Adicionando texto explicativo abaixo do segundo gráfico
-    st.text("The line plot above shows the time series visualization of various process variables. "
-            "You can click on the legend to hide or show specific variables.")
+        # Adicionando linhas verticais para marcar os limites entre as zonas selecionadas colocando o nome da zona no meio
+        for zone in selected_zones:
+            zone_start = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].min()
+            zone_end = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].max()
+            fig1.add_vline(x=zone_start, line_dash='dash', line_color='gray', annotation_text=zone, annotation_position='top right')
+                
+        # Adicionando texto explicativo abaixo do segundo gráfico
+        st.text("The line plot above shows the time series visualization of various process variables. "
+                "You can click on the legend to hide or show specific variables.")
 
-    # Ajuste da altura do layout do gráfico
-    fig2.update_layout(height=600)
+        # Ajuste da altura do layout do gráfico
+        fig1.update_layout(height=600)
 
-    # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
-    st.plotly_chart(fig2, use_container_width=True)
+        # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
+        st.plotly_chart(fig1, use_container_width=True)
 
+    else:
+        fig1 = px.line(df_filtered[cols_to_plot].melt(id_vars=['Time [min]'], var_name='Variable', value_name='Value'),
+                    x='Time [min]', y='Value', color='Variable',
+                    title='Time Series Visualization of Process Variables',
+                    labels={'Value': 'Value', 'Variable': 'Variable'},
+                    line_shape='linear')
+
+        # Configurar traces para serem inicialmente invisíveis na legenda
+        for trace in fig1.data:
+            trace.update(visible='legendonly')
+
+        # Adicionando linhas verticais para marcar os limites entre as zonas selecionadas colocando o nome da zona no meio
+        for zone in selected_zones:
+            zone_start = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].min()
+            zone_end = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].max()
+            fig1.add_vline(x=zone_start, line_dash='dash', line_color='gray', annotation_text=zone, annotation_position='top right')
+                
+        # Adicionando texto explicativo abaixo do segundo gráfico
+        st.text("The line plot above shows the time series visualization of various process variables. "
+                "You can click on the legend to hide or show specific variables.")
+
+        # Ajuste da altura do layout do gráfico
+        fig1.update_layout(height=600)
+
+        # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
+        st.plotly_chart(fig1, use_container_width=True)
+    
     # Criando o mapa de calor
     correlation_heatmap = df_filtered[cols_to_plot].corr()
 
