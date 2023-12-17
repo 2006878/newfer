@@ -28,7 +28,7 @@ def load_data(file):
 if 'uploaded_file' not in st.session_state:
     st.session_state.uploaded_file = None
 
-uploaded_file = file_uploader("Escolha um arquivo xlsx contendo a tabela atualizada", type="xlsx")
+uploaded_file = file_uploader("Choose an xlsx file containing the updated table", type="xlsx")
 
 if uploaded_file:
     
