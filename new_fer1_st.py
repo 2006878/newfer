@@ -7,7 +7,6 @@ from sklearn.impute import KNNImputer
 from sklearn.ensemble import HistGradientBoostingRegressor
 from streamlit import file_uploader
 
-
 # Carreguando o ícone da aba
 favicon = "img/zayon_icon.jpeg"
 
@@ -127,6 +126,7 @@ else:
         
 
     def ml_fillna(df):
+        
         for column in cols_to_plot:
             column_numeric = pd.to_numeric(df[column], errors='coerce')
 
@@ -198,6 +198,12 @@ else:
     for trace in fig2.data:
         trace.update(visible='legendonly')
 
+    # Adicionando linhas verticais para marcar os limites entre as zonas selecionadas colocando o nome da zona no meio
+    for zone in selected_zones:
+        zone_start = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].min()
+        zone_end = df_filtered[df_filtered['Zone'] == zone]['Time [min]'].max()
+        fig2.add_vline(x=zone_start, line_dash='dash', line_color='gray', annotation_text=zone, annotation_position='top right')
+            
     # Adicionando texto explicativo abaixo do segundo gráfico
     st.text("The line plot above shows the time series visualization of various process variables. "
             "You can click on the legend to hide or show specific variables.")
