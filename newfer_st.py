@@ -116,6 +116,10 @@ if st.session_state.uploaded_file is not None:
     # Exibindo o gráfico interativo
     st.plotly_chart(fig1, use_container_width=True)
 
+    st.write("Mean DDRS Rejects/Feed: " + str(dados_filtered['DDRS Rejects/Feed'].mean()*100) + "%")
+    st.write("Mean SDRS Rejects/Feed: " + str(dados_filtered['SDRS Rejects/Feed'].mean()*100) + "%")
+    st.write("Mean Product Pellets: " + str(dados_filtered['Product Pellets'].mean()))
+
     colunas_desejadas = ['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed']
     dados_1 = dados_filtered[colunas_desejadas]
 
