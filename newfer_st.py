@@ -106,24 +106,34 @@ if st.session_state.uploaded_file is not None:
     colunas_desejadas = ['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed']
     dados_1 = dados_filtered[colunas_desejadas]
 
-    # # Normalizando os dados entre 0 e 1
-    # scaler = MinMaxScaler()
+    if st.checkbox("Show normalized data with Product Pellets", False):
+        # Normalizando os dados entre 0 e 1
+        scaler = MinMaxScaler()
 
-    # dados_filtered['DDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
-    # dados_filtered['SDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
-    # dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
-    dados_filtered['DDRS Rejects/Feed'] = dados_filtered[['DDRS Rejects/Feed']]*100
-    dados_filtered['SDRS Rejects/Feed'] = dados_filtered[['SDRS Rejects/Feed']]*100
-
-    # Criando o gráfico com Plotly Express
-    fig3 = px.line(dados_filtered, x='Date', y=['Product Pellets', 'DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
+        dados_filtered['DDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['DDRS Rejects/Feed']])
+        dados_filtered['SDRS Rejects/Feed'] = scaler.fit_transform(dados_filtered[['SDRS Rejects/Feed']])
+        dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
+        
+        # Criando o gráfico com Plotly Express
+        fig3 = px.line(dados_filtered, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed', 'Product Pellets'],
                 labels={'value': 'Values (%)', 'variable': 'Category'},
-                title='Historical Evolution of Product Pellets, DDRS and SDRS',
+                title='Historical Evolution of Product Pellets, DDRS and SDRS (Standardized)',
                 line_shape='linear')
+        # Exibindo o gráfico
+        st.plotly_chart(fig3, use_container_width=True)
 
-    # Exibindo o gráfico
-    st.plotly_chart(fig3, use_container_width=True)
-
+    else:
+        dados_filtered['DDRS Rejects/Feed'] = dados_filtered[['DDRS Rejects/Feed']]*100
+        dados_filtered['SDRS Rejects/Feed'] = dados_filtered[['SDRS Rejects/Feed']]*100
+        
+        # Criando o gráfico com Plotly Express
+        fig3 = px.line(dados_filtered, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
+                labels={'value': 'Values (%)', 'variable': 'Category'},
+                title='Historical Evolution of DDRS and SDRS',
+                line_shape='linear')
+        
+        # Exibindo o gráfico
+        st.plotly_chart(fig3, use_container_width=True)
 
     # Criando o mapa de calor
     correlation_heatmap = dados_1.corr()
