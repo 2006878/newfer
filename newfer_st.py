@@ -5,6 +5,7 @@ import plotly.express as px
 from PIL import Image
 from sklearn.preprocessing import MinMaxScaler
 from st_pages import Page, show_pages
+import numpy as np
 
 # Menu das análises
 show_pages(
@@ -64,6 +65,7 @@ if st.session_state.uploaded_file is not None:
 
     st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
+    # sensibilidade_outlyer = st.checkbox("Outlier correction", False)
     sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 With outlyer):", min_value=1.0, max_value=10.0, value=5.0)
 
     # Função para remover outliers usando o método IQR
@@ -74,15 +76,23 @@ if st.session_state.uploaded_file is not None:
             Q1 = data[column].quantile(0.25)
             Q3 = data[column].quantile(0.75)
             IQR = Q3 - Q1
-            lower_bound = Q1 - sensibilidade_outlyer * IQR
-            upper_bound = Q3 +  sensibilidade_outlyer * IQR
-            return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
+            outliers = ((data[column] < (Q1 - sensibilidade_outlyer * IQR)) | (data[column] > (Q3 + sensibilidade_outlyer * IQR)))
+
+            # Substituir outliers por np.nan
+            data.loc[outliers, column] = np.nan
+
+            # Preencher np.nan com valores interpolados
+            data[column] = data[column].interpolate()
+            return data[column]
 
     # Remover outliers das colunas relevantes
-    dados_filtered = remove_outliers(dados, 'Product Pellets')
-    dados_filtered = remove_outliers(dados_filtered, 'DDRS Rejects/Feed')
-    dados_filtered = remove_outliers(dados_filtered, 'SDRS Rejects/Feed')
+    for column in dados.columns:
+        column = remove_outliers(dados, column)
+    
+    dados_filtered = dados
 
+    dados_filtered['Date'] = dados['Date']
+    
     # Extraindo as colunas relevantes do DataFrame filtrado
     dates = dados_filtered['Date']
     pellets = dados_filtered['Product Pellets']
@@ -100,7 +110,7 @@ if st.session_state.uploaded_file is not None:
                     color_discrete_sequence=['#1f77b4', '#ff7f0e'])  # Defina aqui as cores desejadas
 
     # Adicionando texto explicativo
-    st.text("The scatter plot above shows the evolution of DDRS and SDRS in relation to Product Pellets. "
+    st.write("The scatter plot above shows the evolution of DDRS and SDRS in relation to Product Pellets. "
             "You can click on the legend to hide or show specific variables.")
 
     # Exibindo o gráfico interativo
