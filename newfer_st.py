@@ -64,16 +64,19 @@ if st.session_state.uploaded_file is not None:
 
     st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
-    sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 Lowest sensitivity):", min_value=1.0, max_value=10.0, value=5.0)
+    sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 With outlyer):", min_value=1.0, max_value=10.0, value=5.0)
 
     # Função para remover outliers usando o método IQR
     def remove_outliers(data, column):
-        Q1 = data[column].quantile(0.25)
-        Q3 = data[column].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - sensibilidade_outlyer * IQR
-        upper_bound = Q3 +  sensibilidade_outlyer * IQR
-        return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
+        if sensibilidade_outlyer == 10:
+            return data
+        else:
+            Q1 = data[column].quantile(0.25)
+            Q3 = data[column].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - sensibilidade_outlyer * IQR
+            upper_bound = Q3 +  sensibilidade_outlyer * IQR
+            return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
 
     # Remover outliers das colunas relevantes
     dados_filtered = remove_outliers(dados, 'Product Pellets')
@@ -126,11 +129,14 @@ if st.session_state.uploaded_file is not None:
         dados_filtered['DDRS Rejects/Feed'] = dados_filtered[['DDRS Rejects/Feed']]*100
         dados_filtered['SDRS Rejects/Feed'] = dados_filtered[['SDRS Rejects/Feed']]*100
         
+        # Preenchendo valores ausentes com 0
+        dados_filled = dados_filtered.fillna(0)
+
         # Criando o gráfico com Plotly Express
-        fig3 = px.line(dados_filtered, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
-                labels={'value': 'Values (%)', 'variable': 'Category'},
-                title='Historical Evolution of DDRS and SDRS',
-                line_shape='linear')
+        fig3 = px.bar(dados_filled, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
+                    labels={'value': 'Values (%)', 'variable': 'Category'},
+                    title='Historical Evolution of DDRS and SDRS',
+                    barmode='relative')
         
         # Exibindo o gráfico
         st.plotly_chart(fig3, use_container_width=True)
