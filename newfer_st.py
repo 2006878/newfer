@@ -156,7 +156,7 @@ if st.session_state.uploaded_file is not None:
         # Exibindo o gráfico
         st.plotly_chart(fig2, use_container_width=True)
 
-    st.write("##### Important data information")
+    st.write("##### Descriptive statistics")
     st.write(dados_filtered.describe())
 
     # Criando o mapa de calor
