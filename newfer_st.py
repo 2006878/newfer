@@ -65,18 +65,18 @@ if st.session_state.uploaded_file is not None:
 
     st.write("File uploaded: ", st.session_state.uploaded_file.name)
 
-    # sensibilidade_outlyer = st.checkbox("Outlier correction", False)
-    sensibilidade_outlyer = st.slider("Outlyer sensitivity (1 = Highest sensitivity / 10 With outlyer):", min_value=1.0, max_value=10.0, value=5.0)
+    # sensibilidade_outlier = st.checkbox("Outlier correction", False)
+    sensibilidade_outlier = st.slider("Outlier sensitivity (1 = Highest sensitivity / 10 With outlier):", min_value=1.0, max_value=10.0, value=5.0)
 
     # Função para remover outliers usando o método IQR
     def remove_outliers(data, column):
-        if sensibilidade_outlyer == 10:
+        if sensibilidade_outlier == 10:
             return data
         else:
             Q1 = data[column].quantile(0.25)
             Q3 = data[column].quantile(0.75)
             IQR = Q3 - Q1
-            outliers = ((data[column] < (Q1 - sensibilidade_outlyer * IQR)) | (data[column] > (Q3 + sensibilidade_outlyer * IQR)))
+            outliers = ((data[column] < (Q1 - sensibilidade_outlier * IQR)) | (data[column] > (Q3 + sensibilidade_outlier * IQR)))
 
             # Substituir outliers por np.nan
             data.loc[outliers, column] = np.nan
@@ -156,12 +156,20 @@ if st.session_state.uploaded_file is not None:
         # Exibindo o gráfico
         st.plotly_chart(fig2, use_container_width=True)
 
-    st.write("##### Descriptive statistics")
-    st.write(dados_filtered.describe())
-
     # Criando o mapa de calor
     correlation_heatmap = dados_1.corr()
 
     # Exibindo o mapa de calor
-    st.write("##### Correlation heat map considering sensitivity to outlyers (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
+    st.write("##### Correlation heat map considering sensitivity to outliers (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
     st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
+
+    st.write("##### Descriptive statistics")
+    st.write(dados_filtered.describe())
+    st.write("count: The number of non-null observations. This excludes missing values.")
+    st.write("mean: The arithmetic mean of the values.")
+    st.write("std: The standard deviation, a measure of the dispersion of values around the mean.")
+    st.write("min: The minimum value in the column.")
+    st.write("25%: The first quartile, representing the value below which 25% of the data is found.")
+    st.write("50%: The second quartile, which is the median. It represents the value below which 50% of the data is found.")
+    st.write("75%: The third quartile, representing the value below which 75% of the data is found.")
+    st.write("max: The maximum value in the column.")

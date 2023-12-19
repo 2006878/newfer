@@ -252,9 +252,6 @@ else:
 
         # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
         st.plotly_chart(fig1, use_container_width=True)
-    
-    st.write("##### Descriptive statistics")
-    st.write(df_filtered.describe())
 
     # Criando o mapa de calor
     correlation_heatmap = df_filtered[cols_to_plot].corr()
@@ -262,6 +259,17 @@ else:
     # Exibindo o mapa de calor
     st.write("##### Correlation Heatmap (0 = No correlation / 1 = Maximum Positive Correlation / -1 Maximum Negative Correlation)")
     st.write(correlation_heatmap.style.background_gradient(cmap='coolwarm'))
+
+    st.write("##### Descriptive statistics")    
+    st.write(df_filtered.describe())
+    st.write("count: The number of non-null observations. This excludes missing values.")
+    st.write("mean: The arithmetic mean of the values.")
+    st.write("std: The standard deviation, a measure of the dispersion of values around the mean.")
+    st.write("min: The minimum value in the column.")
+    st.write("25%: The first quartile, representing the value below which 25% of the data is found.")
+    st.write("50%: The second quartile, which is the median. It represents the value below which 50% of the data is found.")
+    st.write("75%: The third quartile, representing the value below which 75% of the data is found.")
+    st.write("max: The maximum value in the column.")
 
     if st.checkbox("Show raw data", False):
         st.subheader('Raw data')
