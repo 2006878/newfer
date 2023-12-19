@@ -253,6 +253,9 @@ else:
         # Exibindo o gráfico apenas para as colunas desejadas e zonas selecionadas
         st.plotly_chart(fig1, use_container_width=True)
     
+    st.write("##### Important data information")
+    st.write(df_filtered.describe())
+
     # Criando o mapa de calor
     correlation_heatmap = df_filtered[cols_to_plot].corr()
 

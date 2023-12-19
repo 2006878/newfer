@@ -105,7 +105,7 @@ if st.session_state.uploaded_file is not None:
     # Criando gráfico interativo com Plotly Express
     fig1 = px.scatter(df_plotly, x='Pellets', y=['DDRS Rejects', 'SDRS Rejects'],
                     labels={'variable': 'Select view', 'value': 'Percentage'},
-                    title='Evolution of DDRS and SDRS in relation to Product Pellets (No Outliers)',
+                    title='Evolution of DDRS and SDRS in relation to Product Pellets',
                     hover_data=['Date'], trendline='ols',
                     color_discrete_sequence=['#1f77b4', '#ff7f0e'])  # Defina aqui as cores desejadas
 
@@ -116,6 +116,7 @@ if st.session_state.uploaded_file is not None:
     # Exibindo o gráfico interativo
     st.plotly_chart(fig1, use_container_width=True)
 
+    st.write("##### Mean values of the variables:")
     st.write("Mean DDRS Rejects/Feed: " + str(dados_filtered['DDRS Rejects/Feed'].mean()*100) + "%")
     st.write("Mean SDRS Rejects/Feed: " + str(dados_filtered['SDRS Rejects/Feed'].mean()*100) + "%")
     st.write("Mean Product Pellets: " + str(dados_filtered['Product Pellets'].mean()))
@@ -132,12 +133,12 @@ if st.session_state.uploaded_file is not None:
         dados_filtered['Product Pellets'] = scaler.fit_transform(dados_filtered[['Product Pellets']])
         
         # Criando o gráfico com Plotly Express
-        fig3 = px.line(dados_filtered, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed', 'Product Pellets'],
+        fig2 = px.line(dados_filtered, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed', 'Product Pellets'],
                 labels={'value': 'Values (%)', 'variable': 'Category'},
                 title='Historical Evolution of Product Pellets, DDRS and SDRS (Standardized)',
                 line_shape='linear')
         # Exibindo o gráfico
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True)
 
     else:
         dados_filtered['DDRS Rejects/Feed'] = dados_filtered[['DDRS Rejects/Feed']]*100
@@ -147,13 +148,16 @@ if st.session_state.uploaded_file is not None:
         dados_filled = dados_filtered.fillna(0)
 
         # Criando o gráfico com Plotly Express
-        fig3 = px.bar(dados_filled, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
+        fig2 = px.bar(dados_filled, x='Date', y=['DDRS Rejects/Feed', 'SDRS Rejects/Feed'],
                     labels={'value': 'Values (%)', 'variable': 'Category'},
                     title='Historical Evolution of DDRS and SDRS',
                     barmode='relative')
         
         # Exibindo o gráfico
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.write("##### Important data information")
+    st.write(dados_filtered.describe())
 
     # Criando o mapa de calor
     correlation_heatmap = dados_1.corr()
